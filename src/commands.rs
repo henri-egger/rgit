@@ -1,22 +1,18 @@
+use crate::Paths;
 use std::{fs, path};
 
-const ROOT: &str = ".rgit";
-const DIRS: [&str; 2] = ["/objects", "/refs"];
-const INDEX: &str = "/index.json";
-
 pub fn init() {
-    if path::Path::new(ROOT).exists() == true {
+    if path::Path::new(&Paths::root()).exists() == true {
         println!("Working directory is already a repository");
         return;
     }
 
     println!("Initlizing repository...");
 
-    for dir in DIRS {
-        fs::create_dir_all(&format!("{}{}", ROOT, dir))
-            .expect(&format!("Failed to create directory {}", dir));
+    for dir in Paths::dirs() {
+        fs::create_dir_all(&dir).expect(&format!("Failed to create directory {}", dir));
     }
 
-    fs::File::create(&format!("{}{}", ROOT, INDEX))
-        .expect(&format!("Failed to create directory {}", INDEX));
+    fs::File::create(Paths::index())
+        .expect(&format!("Failed to create directory {}", Paths::index()));
 }
