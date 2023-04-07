@@ -1,7 +1,7 @@
 use crate::Paths;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use std::{fs, io};
+use std::{fs, io, path};
 
 #[derive(Serialize, Deserialize)]
 pub struct Index {
@@ -17,6 +17,12 @@ impl Index {
 
     fn write_to_file(&self) -> Result<(), io::Error> {
         fs::write(Paths::index(), self.to_json_string()?)
+    }
+
+    pub fn add_file(&mut self, path: impl AsRef<path::Path>) -> Result<(), io::Error> {
+        // TODO: serialize file data as blob, get sha1, add entry to index
+
+        self.write_to_file()
     }
 }
 
