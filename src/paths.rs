@@ -1,5 +1,3 @@
-use std::ops::Add;
-
 const ROOT: &str = ".rgit";
 const DIRS: [&str; 2] = ["/objects", "/refs"];
 const INDEX: &str = "/index.json";
