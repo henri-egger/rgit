@@ -2,6 +2,7 @@ use std::{fs, path};
 
 const ROOT: &str = ".rgit";
 const DIRS: [&str; 2] = ["/objects", "/refs"];
+const INDEX: &str = "/index.json";
 
 pub fn init() {
     if path::Path::new(ROOT).exists() == true {
@@ -15,4 +16,7 @@ pub fn init() {
         fs::create_dir_all(&format!("{}{}", ROOT, dir))
             .expect(&format!("Failed to create directory {}", dir));
     }
+
+    fs::File::create(&format!("{}{}", ROOT, INDEX))
+        .expect(&format!("Failed to create directory {}", INDEX));
 }
