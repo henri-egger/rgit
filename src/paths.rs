@@ -1,5 +1,6 @@
 const ROOT: &str = ".rgit";
-const DIRS: [&str; 2] = ["/objects", "/refs"];
+const OBJECTS: &str = "/objects";
+const REFS: &str = "/refs";
 const INDEX: &str = "/index.json";
 
 pub struct Paths;
@@ -9,17 +10,19 @@ impl Paths {
         String::from(ROOT)
     }
 
-    pub fn dirs() -> Vec<String> {
-        let mut dirs = Vec::new();
+    pub fn objects() -> String {
+        Paths::root() + OBJECTS
+    }
 
-        for dir in DIRS {
-            dirs.push(String::from(ROOT) + dir);
-        }
-
-        dirs
+    pub fn refs() -> String {
+        Paths::root() + REFS
     }
 
     pub fn index() -> String {
-        String::from(ROOT) + &INDEX
+        Paths::root() + INDEX
+    }
+
+    pub fn dirs() -> Vec<String> {
+        vec![Paths::objects(), Paths::refs()]
     }
 }

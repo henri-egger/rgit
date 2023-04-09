@@ -13,7 +13,7 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Subcommands {
     Init,
-    Add,
+    Add { file: String },
     Commit,
     Status,
     Checkout,

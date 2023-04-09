@@ -1,5 +1,5 @@
-use crate::Paths;
-use std::{fs, path};
+use crate::{objects, Paths};
+use std::{fmt, fs, path};
 
 pub fn init() {
     if path::Path::new(&Paths::root()).exists() == true {
@@ -15,4 +15,9 @@ pub fn init() {
 
     fs::File::create(Paths::index())
         .expect(&format!("Failed to create directory {}", Paths::index()));
+}
+
+pub fn add(path: impl AsRef<path::Path> + fmt::Display) {
+    let mut index = objects::Index::from_index_file();
+    index.add_entry(path);
 }
