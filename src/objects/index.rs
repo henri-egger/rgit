@@ -126,6 +126,6 @@ impl Entry {
 
 impl Storable for Entry {
     fn store(&self) {
-        objects::Blob::from_wd_file(&self.path).store_object_file();
+        objects::Blob::from_wd_file(&self.path).store();
     }
 }

@@ -1,4 +1,4 @@
-use crate::Paths;
+use crate::{storing::Storable, Paths};
 use sha1_smol;
 use std::{fmt, fs, path};
 
@@ -43,15 +43,17 @@ impl Blob {
         blob
     }
 
-    pub fn store_object_file(&self) {
+    pub fn sha1(&self) -> &str {
+        &self.sha1
+    }
+}
+
+impl Storable for Blob {
+    fn store(&self) {
         let mut buf: Vec<u8> = BLOB_IDENTIFIER.into();
         buf.extend_from_slice(&self.bytes);
 
         fs::write(Paths::objects() + "/" + &self.sha1, &buf)
             .expect(&format!("Failed to store blob"));
-    }
-
-    pub fn sha1(&self) -> &str {
-        &self.sha1
     }
 }
