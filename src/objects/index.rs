@@ -1,4 +1,8 @@
-use crate::{objects, Paths};
+use crate::{
+    objects,
+    storing::{Storable, Stored},
+    Paths,
+};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::{fmt, fs, os::unix::prelude::PermissionsExt, path};
@@ -6,7 +10,7 @@ use std::{fmt, fs, os::unix::prelude::PermissionsExt, path};
 #[derive(Serialize, Deserialize)]
 pub struct Index {
     entry_count: usize,
-    entries: Vec<Entry>,
+    entries: Vec<Stored<Entry>>,
 }
 
 impl Index {
@@ -28,21 +32,25 @@ impl Index {
         match self
             .entries
             .iter_mut()
-            .find(|x| x.path.eq(&path.to_string()))
+            .find(|x| x.value().path.eq(&path.to_string()))
         {
             // If an entry with this path already exists in the index and the sha1s and modes match
             // then return, else update it with the new data
-            Some(existng_entry) => {
-                if existng_entry.sha1.eq(&new_entry.sha1()) && existng_entry.mode == new_entry.mode
+            Some(existing_entry) => {
+                let existing_entry = existing_entry.value_mut();
+
+                if existing_entry.sha1.eq(&new_entry.sha1())
+                    && existing_entry.mode == new_entry.mode
                 {
                     return;
                 }
 
-                existng_entry.update(path);
+                existing_entry.update(path);
             }
             None => {
-                new_entry.store_object_file();
-                self.entries.push(new_entry);
+                let stored = Stored::new(new_entry);
+
+                self.entries.push(stored);
                 self.entry_count = self.entries.len();
             }
         }
@@ -109,15 +117,15 @@ impl Entry {
 
         self.mode = mode;
         self.sha1 = sha1;
-
-        self.store_object_file();
     }
 
     fn sha1(&self) -> &str {
         &self.sha1
     }
+}
 
-    fn store_object_file(&self) {
+impl Storable for Entry {
+    fn store(&self) {
         objects::Blob::from_wd_file(&self.path).store_object_file();
     }
 }
