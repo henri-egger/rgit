@@ -29,15 +29,17 @@ impl Index {
     pub fn add_entry(&mut self, path: impl AsRef<path::Path> + fmt::Display) {
         let new_entry = Entry::new(&path);
 
-        match self
+        let new_entry = match self
             .entries
             .iter_mut()
-            .find(|x| x.value().path.eq(&path.to_string()))
+            .enumerate()
+            .find(|(_, x)| x.value().path.eq(&path.to_string()))
         {
             // If an entry with this path already exists in the index and the sha1s and modes match
             // then return, else update it with the new data
-            Some(existing_entry) => {
-                let existing_entry = existing_entry.value_mut();
+            Some((i, _)) => {
+                let existing_entry = self.entries.remove(i);
+                let mut existing_entry = existing_entry.into_value();
 
                 if existing_entry.sha1.eq(&new_entry.sha1())
                     && existing_entry.mode == new_entry.mode
@@ -46,16 +48,17 @@ impl Index {
                 }
 
                 existing_entry.update(path);
-            }
-            None => {
-                let stored = Stored::new(new_entry);
 
-                self.entries.push(stored);
-                self.entry_count = self.entries.len();
+                existing_entry
             }
-        }
+            None => new_entry,
+        };
 
-        // If changes have been made, update the index file
+        let stored_new_entry = Stored::new(new_entry);
+
+        self.entries.push(stored_new_entry);
+        self.entry_count = self.entries.len();
+
         self.update_index_file();
     }
 

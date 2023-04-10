@@ -5,7 +5,7 @@ pub trait Storable {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct Stored<T: Storable>(T);
+pub struct Stored<T: Storable + Sized>(T);
 
 impl<T: Storable> Stored<T> {
     pub fn new(storable: T) -> Stored<T> {
@@ -17,7 +17,7 @@ impl<T: Storable> Stored<T> {
         &self.0
     }
 
-    pub fn value_mut(&mut self) -> &mut T {
-        &mut self.0
+    pub fn into_value(self) -> T {
+        self.0
     }
 }
