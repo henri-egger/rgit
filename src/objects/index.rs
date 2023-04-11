@@ -117,24 +117,6 @@ impl Entry {
 
         Some(Entry::new(path))
     }
-
-    fn update(&mut self, path: impl AsRef<path::Path> + fmt::Display) {
-        let mode = fs::File::open(&path)
-            .expect(&format!("Failed to open {} to retrieve metadata", path))
-            .metadata()
-            .expect(&format!("Failed to retrieve metadata for {}", path))
-            .permissions()
-            .mode();
-
-        let sha1 = objects::Blob::from_wd_file(&path).sha1().into();
-
-        self.mode = mode;
-        self.sha1 = sha1;
-    }
-
-    fn sha1(&self) -> &str {
-        &self.sha1
-    }
 }
 
 impl Storable for Entry {
