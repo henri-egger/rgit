@@ -26,6 +26,16 @@ impl Index {
         fs::write(Paths::index(), self.to_json_string()).expect("Failed to update index file")
     }
 
+    fn update_index(&mut self, entry: Option<Entry>) {
+        if let Some(entry) = entry {
+            let stored_entry = Stored::new(entry);
+            self.entries.push(stored_entry);
+        }
+
+        self.entry_count = self.entries.len();
+        self.update_index_file();
+    }
+
     fn query_by_path<T>(&self, path: T) -> Option<usize>
     where
         T: AsRef<path::Path> + fmt::Display,
