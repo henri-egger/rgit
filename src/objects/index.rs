@@ -26,38 +26,57 @@ impl Index {
         fs::write(Paths::index(), self.to_json_string()).expect("Failed to update index file")
     }
 
-    pub fn add_entry(&mut self, path: impl AsRef<path::Path> + fmt::Display) {
-        let new_entry = Entry::new(&path);
-
-        let new_entry = match self
+    fn query_by_path<T>(&self, path: T) -> Option<(usize)>
+    where
+        T: AsRef<path::Path> + fmt::Display,
+    {
+        let entry = self
             .entries
-            .iter_mut()
+            .iter()
             .enumerate()
-            .find(|(_, x)| x.value().path.eq(&path.to_string()))
-        {
-            // If an entry with this path already exists in the index and the sha1s and modes match
-            // then return, else update it with the new data
-            Some((i, _)) => {
-                let existing_entry = self.entries.remove(i);
-                let mut existing_entry = existing_entry.into_value();
+            .find(|(_, x)| x.value().path.eq(&path.to_string()));
 
-                if existing_entry.sha1.eq(&new_entry.sha1())
-                    && existing_entry.mode == new_entry.mode
-                {
-                    return;
-                }
+        match entry {
+            Some((i, _)) => return Some(i),
+            None => None,
+        }
+    }
 
-                existing_entry.update(path);
+    pub fn add_entry(&mut self, path: impl AsRef<path::Path> + fmt::Display) {
+        let new_maybe_entry = Entry::try_new(&path);
 
-                existing_entry
-            }
-            None => new_entry,
+        // Here the existing entry is always removed and conditionally added back in
+        let existing_maybe_entry = match self.query_by_path(&path) {
+            Some(i) => Some(self.entries.remove(i).into_value()),
+            None => None,
         };
 
-        let stored_new_entry = Stored::new(new_entry);
+        match new_maybe_entry {
+            // If there is a file at the path, either update and put back existing entry or add new one
+            Some(new_entry) => {
+                let new_entry = match existing_maybe_entry {
+                    Some(mut existing_entry) => {
+                        if existing_entry.sha1.eq(&new_entry.sha1())
+                            && existing_entry.mode == new_entry.mode
+                        {
+                            return;
+                        }
 
-        self.entries.push(stored_new_entry);
-        self.entry_count = self.entries.len();
+                        existing_entry.update(path);
+
+                        existing_entry
+                    }
+                    None => new_entry,
+                };
+
+                let stored_new_entry = Stored::new(new_entry);
+
+                self.entries.push(stored_new_entry);
+                self.entry_count = self.entries.len();
+            }
+            // If there is no file at the path do nothing since the existing entry has already been removed
+            None => {}
+        }
 
         self.update_index_file();
     }
@@ -106,6 +125,14 @@ impl Entry {
             path: path.to_string(),
             sha1,
         }
+    }
+
+    fn try_new(path: impl AsRef<path::Path> + fmt::Display) -> Option<Entry> {
+        if !path::Path::try_exists(path.as_ref()).unwrap() {
+            return None;
+        }
+
+        Some(Entry::new(path))
     }
 
     fn update(&mut self, path: impl AsRef<path::Path> + fmt::Display) {
