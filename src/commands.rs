@@ -19,7 +19,7 @@ pub fn init() {
 
 pub fn add(path: impl AsRef<path::Path> + fmt::Display) {
     let mut index = objects::Index::from_index_file();
-    index.add_entry(path);
+    index.add(path);
 }
 
 pub mod dev_commands {

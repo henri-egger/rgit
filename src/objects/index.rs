@@ -9,7 +9,6 @@ use std::{fmt, fs, os::unix::prelude::PermissionsExt, path};
 
 #[derive(Serialize, Deserialize)]
 pub struct Index {
-    entry_count: usize,
     entries: Vec<Stored<Entry>>,
 }
 
@@ -24,16 +23,6 @@ impl Index {
 
     fn update_index_file(&self) {
         fs::write(Paths::index(), self.to_json_string()).expect("Failed to update index file")
-    }
-
-    fn update_index(&mut self, entry: Option<Entry>) {
-        if let Some(entry) = entry {
-            let stored_entry = Stored::new(entry);
-            self.entries.push(stored_entry);
-        }
-
-        self.entry_count = self.entries.len();
-        self.update_index_file();
     }
 
     fn query_by_path<T>(&self, path: T) -> Option<usize>
@@ -52,41 +41,25 @@ impl Index {
         }
     }
 
-    // TODO: Could be improved with if let guard clause
-    pub fn add_entry(&mut self, path: impl AsRef<path::Path> + fmt::Display) {
+    pub fn add(&mut self, path: impl AsRef<path::Path> + fmt::Display) {
         let new_maybe_entry = Entry::try_new(&path);
-
-        // Here the existing entry is always removed and conditionally added back in
-        let existing_maybe_entry = match self.query_by_path(&path) {
-            Some(i) => Some(self.entries.remove(i).into_value()),
-            None => None,
-        };
+        let existing_maybe_i = self.query_by_path(&path);
 
         match new_maybe_entry {
-            // If there is a file at the path, either update and put back existing entry or add new one
+            None => match existing_maybe_i {
+                None => panic!("File {} not found", path),
+                Some(existing_i) => {
+                    self.entries.remove(existing_i);
+                }
+            },
+
             Some(new_entry) => {
-                let new_entry = match existing_maybe_entry {
-                    Some(mut existing_entry) => {
-                        if existing_entry.sha1.eq(&new_entry.sha1())
-                            && existing_entry.mode == new_entry.mode
-                        {
-                            return;
-                        }
+                if let Some(existing_i) = existing_maybe_i {
+                    self.entries.remove(existing_i);
+                }
 
-                        existing_entry.update(path);
-
-                        existing_entry
-                    }
-                    None => new_entry,
-                };
-
-                let stored_new_entry = Stored::new(new_entry);
-
-                self.entries.push(stored_new_entry);
-                self.entry_count = self.entries.len();
+                self.entries.push(Stored::new(new_entry));
             }
-            // If there is no file at the path do nothing since the existing entry has already been removed
-            None => {}
         }
 
         self.update_index_file();
@@ -98,7 +71,6 @@ impl Index {
 
         if json_string.is_empty() {
             Index {
-                entry_count: 0,
                 entries: Vec::new(),
             }
             .update_index_file();
