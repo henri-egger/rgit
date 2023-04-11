@@ -1,15 +1,11 @@
-use crate::{
-    objects,
-    storing::{Storable, Stored},
-    Paths,
-};
+use crate::{objects, storing::Storable, Paths};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::{fmt, fs, os::unix::prelude::PermissionsExt, path};
 
 #[derive(Serialize, Deserialize)]
 pub struct Index {
-    entries: Vec<Stored<Entry>>,
+    entries: Vec<Entry>,
 }
 
 impl Index {
@@ -33,7 +29,7 @@ impl Index {
             .entries
             .iter()
             .enumerate()
-            .find(|(_, x)| x.value().path.eq(&path.to_string()));
+            .find(|(_, x)| x.path.eq(&path.to_string()));
 
         match entry {
             Some((i, _)) => return Some(i),
@@ -58,11 +54,9 @@ impl Index {
                     self.entries.remove(existing_i);
                 }
 
-                self.entries.push(Stored::new(new_entry));
+                self.entries.push(new_entry);
             }
         }
-
-        self.update_index_file();
     }
 
     pub fn from_index_file() -> Index {
@@ -82,6 +76,16 @@ impl Index {
         let index = Index::from_json_string(json_string);
 
         index
+    }
+}
+
+impl Storable for Index {
+    fn store(&self) {
+        for entry in self.entries.iter() {
+            entry.store();
+        }
+
+        self.update_index_file()
     }
 }
 

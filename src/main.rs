@@ -2,23 +2,34 @@ use clap::Parser;
 use rgit::{
     cli::{Cli, DevSubcommands, Subcommands},
     commands,
+    storing::Storable,
+    DirBuilder,
 };
 
-// TODO: not run other commands if uninitialized
-
+// TODO: not run other commands if uninitialized, replace all empty storables
 fn main() {
     let cli = Cli::parse();
 
-    match cli.command {
-        Subcommands::Init => commands::init(),
-        Subcommands::Add { file } => commands::add(file),
-        Subcommands::Commit => println!("Nothing here yet :("),
-        Subcommands::Status => println!("Nothing here yet :("),
-        Subcommands::Checkout => println!("Nothing here yet :("),
-        Subcommands::Branch => println!("Nothing here yet :("),
+    let storable: Box<dyn Storable> = match cli.command {
+        Subcommands::Init => Box::new(DirBuilder),
+        Subcommands::Add { file } => Box::new(commands::add(file)),
+        Subcommands::Commit => Box::new(EmptyStorable),
+        Subcommands::Status => Box::new(EmptyStorable),
+        Subcommands::Checkout => Box::new(EmptyStorable),
+        Subcommands::Branch => Box::new(EmptyStorable),
         Subcommands::Dev { command } => match command {
-            DevSubcommands::Clean => commands::dev_commands::clean(),
-            DevSubcommands::ListIndex => println!("Nothing here yet :("),
+            DevSubcommands::Clean => Box::new(DirBuilder::clean()),
+            DevSubcommands::ListIndex => Box::new(EmptyStorable),
         },
+    };
+
+    storable.store();
+}
+
+struct EmptyStorable;
+
+impl Storable for EmptyStorable {
+    fn store(&self) {
+        println!("Nothing here yet :(")
     }
 }
