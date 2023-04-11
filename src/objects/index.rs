@@ -42,6 +42,7 @@ impl Index {
         }
     }
 
+    // TODO: Could be improved with if let guard clause
     pub fn add_entry(&mut self, path: impl AsRef<path::Path> + fmt::Display) {
         let new_maybe_entry = Entry::try_new(&path);
 
