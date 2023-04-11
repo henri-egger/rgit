@@ -26,7 +26,7 @@ impl Index {
         fs::write(Paths::index(), self.to_json_string()).expect("Failed to update index file")
     }
 
-    fn query_by_path<T>(&self, path: T) -> Option<(usize)>
+    fn query_by_path<T>(&self, path: T) -> Option<usize>
     where
         T: AsRef<path::Path> + fmt::Display,
     {
