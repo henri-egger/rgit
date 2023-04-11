@@ -20,7 +20,8 @@ impl Commands {
     }
 
     pub fn status() -> CommandReturnType {
-        // let index = objects::Index::new_from_index_file();
+        let index = objects::Index::new_from_index_file();
+        index.status();
 
         CommandReturnType::NonStorable
     }

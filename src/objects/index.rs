@@ -1,7 +1,8 @@
 use crate::{objects, storing::Storable, Paths};
+use glob;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use std::{fmt, fs, os::unix::prelude::PermissionsExt, path};
+use std::{collections::HashSet, fmt, fs, hash::Hash, os::unix::prelude::PermissionsExt, path};
 
 #[derive(Serialize, Deserialize)]
 pub struct Index {
@@ -77,6 +78,24 @@ impl Index {
 
         index
     }
+
+    pub fn status(&self) {
+        let ignore = fs::read_to_string(".gitignore").unwrap() + "\n.git\n.rgit";
+
+        let wd_entries: HashSet<Entry> = glob::glob("**/*.*")
+            .expect("Failed to read glob pattern")
+            .map(|x| x.unwrap())
+            .map(|x| x.to_string_lossy().to_string())
+            .filter(|x| !ignore.lines().any(|e| x.contains(e)))
+            .map(|x| Entry::new_from_path(x))
+            .collect();
+
+        let index_entries: HashSet<Entry> = self.entries.iter().cloned().collect();
+
+        let delta = &wd_entries - &index_entries;
+
+        dbg!(&delta);
+    }
 }
 
 impl Storable for Index {
@@ -89,7 +108,7 @@ impl Storable for Index {
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Debug)]
 struct Entry {
     mode: u32,
     path: String,
@@ -97,7 +116,7 @@ struct Entry {
 }
 
 impl Entry {
-    fn new(path: impl AsRef<path::Path> + fmt::Display) -> Entry {
+    fn new_from_path(path: impl AsRef<path::Path> + fmt::Display) -> Entry {
         let mode = fs::File::open(&path)
             .expect(&format!("Failed to open {} to retrieve metadata", path))
             .metadata()
@@ -119,7 +138,7 @@ impl Entry {
             return None;
         }
 
-        Some(Entry::new(path))
+        Some(Entry::new_from_path(path))
     }
 }
 
