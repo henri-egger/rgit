@@ -1,6 +1,6 @@
 use clap::Parser;
 use rgit::{
-    cli::{Cli, Subcommands},
+    cli::{Cli, DevSubcommands, Subcommands},
     commands,
 };
 
@@ -16,5 +16,9 @@ fn main() {
         Subcommands::Status => println!("Nothing here yet :("),
         Subcommands::Checkout => println!("Nothing here yet :("),
         Subcommands::Branch => println!("Nothing here yet :("),
+        Subcommands::Dev { command } => match command {
+            DevSubcommands::Clean => commands::dev_commands::clean(),
+            DevSubcommands::ListIndex => println!("Nothing here yet :("),
+        },
     }
 }

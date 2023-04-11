@@ -13,9 +13,21 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Subcommands {
     Init,
-    Add { file: String },
+    Add {
+        file: String,
+    },
     Commit,
     Status,
     Checkout,
     Branch,
+    Dev {
+        #[command(subcommand)]
+        command: DevSubcommands,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum DevSubcommands {
+    Clean,
+    ListIndex,
 }
