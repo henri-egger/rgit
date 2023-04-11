@@ -22,14 +22,14 @@ impl Blob {
         }
     }
 
-    pub fn from_wd_file(path: impl AsRef<path::Path> + fmt::Display) -> Blob {
+    pub fn new_from_wd_file(path: impl AsRef<path::Path> + fmt::Display) -> Blob {
         let bytes = fs::read(&path).expect(&format!("Failed to read {} to create blob", path));
         let blob = Blob::from_bytes(&bytes);
 
         blob
     }
 
-    pub fn from_object_file(sha1: String) -> Blob {
+    pub fn new_from_object_file(sha1: String) -> Blob {
         let buf = fs::read(Paths::objects() + &sha1)
             .expect(&format!("Failed to read {} to create blob", sha1));
 

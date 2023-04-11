@@ -59,7 +59,7 @@ impl Index {
         }
     }
 
-    pub fn from_index_file() -> Index {
+    pub fn new_from_index_file() -> Index {
         let mut json_string =
             fs::read_to_string(Paths::index()).expect(&format!("Failed to read index file"));
 
@@ -105,7 +105,7 @@ impl Entry {
             .permissions()
             .mode();
 
-        let sha1 = objects::Blob::from_wd_file(&path).sha1().into();
+        let sha1 = objects::Blob::new_from_wd_file(&path).sha1().into();
 
         Entry {
             mode,
@@ -125,6 +125,6 @@ impl Entry {
 
 impl Storable for Entry {
     fn store(&self) {
-        objects::Blob::from_wd_file(&self.path).store();
+        objects::Blob::new_from_wd_file(&self.path).store();
     }
 }

@@ -1,8 +1,35 @@
-use crate::objects;
+use crate::{objects, storing::Storable, DirBuilder};
 use std::{fmt, path};
 
-pub fn add(path: impl AsRef<path::Path> + fmt::Display) -> objects::Index {
-    let mut index = objects::Index::from_index_file();
-    index.add(path);
-    index
+pub enum CommandReturnType {
+    Storable(Box<dyn Storable>),
+    NonStorable,
+}
+
+pub struct Commands;
+
+impl Commands {
+    pub fn init() -> CommandReturnType {
+        CommandReturnType::Storable(Box::new(DirBuilder))
+    }
+
+    pub fn add(path: impl AsRef<path::Path> + fmt::Display) -> CommandReturnType {
+        let mut index = objects::Index::new_from_index_file();
+        index.add(path);
+        CommandReturnType::Storable(Box::new(index))
+    }
+
+    pub fn status() -> CommandReturnType {
+        // let index = objects::Index::new_from_index_file();
+
+        CommandReturnType::NonStorable
+    }
+}
+
+pub struct DevCommands;
+
+impl DevCommands {
+    pub fn clean() -> CommandReturnType {
+        CommandReturnType::Storable(Box::new(DirBuilder::clean()))
+    }
 }
