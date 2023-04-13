@@ -20,7 +20,6 @@ fn main() {
         Subcommands::Branch => NonStorable,
         Subcommands::Dev { command } => match command {
             DevSubcommands::Clean => DevCommands::clean(),
-            DevSubcommands::ListIndex => NonStorable,
         },
     };
 

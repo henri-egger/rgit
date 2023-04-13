@@ -29,5 +29,4 @@ pub enum Subcommands {
 #[derive(Subcommand)]
 pub enum DevSubcommands {
     Clean,
-    ListIndex,
 }

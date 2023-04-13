@@ -38,7 +38,6 @@ impl Index {
         }
     }
 
-    // TODO: Work with glob
     pub fn add(&mut self, mut path: String) {
         let ignore_filter = IgnoreFilter::new(Paths::ignore());
 
@@ -71,6 +70,7 @@ impl Index {
         }
     }
 
+    // TODO: Not update if shas match
     fn add_entry_from_path<T>(&mut self, path: T) -> Result<(), io::Error>
     where
         T: AsRef<path::Path> + fmt::Display,
