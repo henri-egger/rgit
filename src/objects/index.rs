@@ -1,8 +1,8 @@
-use crate::{objects, storing::Storable, Paths};
+use crate::{objects, storing::Storable, IgnoreFilter, Paths};
 use glob;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use std::{collections::HashSet, fmt, fs, hash::Hash, os::unix::prelude::PermissionsExt, path};
+use std::{collections::HashSet, fmt, fs, hash::Hash, io, os::unix::prelude::PermissionsExt, path};
 
 #[derive(Serialize, Deserialize)]
 pub struct Index {
@@ -38,13 +38,54 @@ impl Index {
         }
     }
 
-    pub fn add(&mut self, path: impl AsRef<path::Path> + fmt::Display) {
+    // TODO: Work with glob
+    pub fn add(&mut self, mut path: String) {
+        let ignore_filter = IgnoreFilter::new(Paths::ignore());
+
+        let paths: Vec<String> = if path::Path::is_dir(&path::Path::new(&path)) {
+            if !path.ends_with("/") {
+                path.push_str("/");
+            }
+
+            path.push_str("**/*.*");
+
+            glob::glob(&path)
+                .unwrap()
+                .map(|x| x.unwrap())
+                .map(|x| x.to_string_lossy().to_string())
+                .filter(|x| ignore_filter.validate(x))
+                .collect()
+        } else {
+            if !ignore_filter.validate(&path) {
+                panic!("Path is included in gitignore");
+            }
+
+            vec![path]
+        };
+
+        for path in paths.iter() {
+            let result = self.add_entry_from_path(path);
+            if let Err(err) = result {
+                eprintln!("{}", err);
+            }
+        }
+    }
+
+    fn add_entry_from_path<T>(&mut self, path: T) -> Result<(), io::Error>
+    where
+        T: AsRef<path::Path> + fmt::Display,
+    {
         let new_maybe_entry = Entry::try_new(&path);
         let existing_maybe_i = self.query_by_path(&path);
 
         match new_maybe_entry {
             None => match existing_maybe_i {
-                None => panic!("File {} not found", path),
+                None => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::NotFound,
+                        format!("File {} not found", path),
+                    ))
+                }
                 Some(existing_i) => {
                     self.entries.remove(existing_i);
                 }
@@ -58,6 +99,8 @@ impl Index {
                 self.entries.push(new_entry);
             }
         }
+
+        Ok(())
     }
 
     pub fn new_from_index_file() -> Index {
@@ -80,13 +123,13 @@ impl Index {
     }
 
     pub fn status(&self) {
-        let ignore = fs::read_to_string(".gitignore").unwrap() + "\n.git\n.rgit";
+        let ignore_filter = IgnoreFilter::new(Paths::ignore());
 
         let wd_entries: HashSet<Entry> = glob::glob("**/*.*")
             .expect("Failed to read glob pattern")
             .map(|x| x.unwrap())
             .map(|x| x.to_string_lossy().to_string())
-            .filter(|x| !ignore.lines().any(|e| x.contains(e)))
+            .filter(|x| ignore_filter.validate(x))
             .map(|x| Entry::new_from_path(x))
             .collect();
 
@@ -94,6 +137,7 @@ impl Index {
 
         let delta = &wd_entries - &index_entries;
 
+        // TODO: Sort diffrences
         dbg!(&delta);
     }
 }

@@ -1,5 +1,4 @@
 use crate::{objects, storing::Storable, DirBuilder};
-use std::{fmt, path};
 
 pub enum CommandReturnType {
     Storable(Box<dyn Storable>),
@@ -13,7 +12,7 @@ impl Commands {
         CommandReturnType::Storable(Box::new(DirBuilder))
     }
 
-    pub fn add(path: impl AsRef<path::Path> + fmt::Display) -> CommandReturnType {
+    pub fn add(path: String) -> CommandReturnType {
         let mut index = objects::Index::new_from_index_file();
         index.add(path);
         CommandReturnType::Storable(Box::new(index))
