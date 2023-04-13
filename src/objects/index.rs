@@ -53,10 +53,10 @@ impl Index {
                 .unwrap()
                 .map(|x| x.unwrap())
                 .map(|x| x.to_string_lossy().to_string())
-                .filter(|x| ignore_filter.validate(x))
+                .filter(|x| ignore_filter.is_valid(x))
                 .collect()
         } else {
-            if !ignore_filter.validate(&path) {
+            if !ignore_filter.is_valid(&path) {
                 panic!("Path is included in gitignore");
             }
 
@@ -129,7 +129,7 @@ impl Index {
             .expect("Failed to read glob pattern")
             .map(|x| x.unwrap())
             .map(|x| x.to_string_lossy().to_string())
-            .filter(|x| ignore_filter.validate(x))
+            .filter(|x| ignore_filter.is_valid(x))
             .map(|x| Entry::new_from_path(x))
             .collect();
 

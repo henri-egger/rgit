@@ -12,7 +12,7 @@ impl IgnoreFilter {
         IgnoreFilter { ignore_paths }
     }
 
-    pub fn validate(&self, path: &str) -> bool {
+    pub fn is_valid(&self, path: &str) -> bool {
         !self.ignore_paths.iter().any(|x| path.contains(x))
     }
 }
