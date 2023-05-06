@@ -1,4 +1,8 @@
-use crate::{objects, storing::Storable, DirBuilder};
+use crate::{
+    objects::{self, Tree},
+    storing::{Object, Storable},
+    DirBuilder,
+};
 
 pub enum CommandReturnType {
     Storable(Box<dyn Storable>),
@@ -31,5 +35,11 @@ pub struct DevCommands;
 impl DevCommands {
     pub fn clean() -> CommandReturnType {
         CommandReturnType::Storable(Box::new(DirBuilder::clean()))
+    }
+
+    pub fn dbg_tree(sha1: &str) -> CommandReturnType {
+        let tree = Tree::new_from_object_file(sha1);
+        dbg!(&tree);
+        CommandReturnType::Storable(Box::new(tree))
     }
 }

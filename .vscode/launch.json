@@ -40,7 +40,7 @@
             },
             "args": [
                 "add",
-                "Cargo.toml"
+                "src/main.rs"
             ],
             "cwd": "${workspaceFolder}"
         },

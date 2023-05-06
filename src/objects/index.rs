@@ -1,10 +1,10 @@
-use crate::{objects, storing::Storable, IgnoreFilter, Paths};
+use crate::{objects::Blob, storing::Storable, IgnoreFilter, Paths};
 use glob;
 use serde::{Deserialize, Serialize};
 use serde_json;
-use std::{collections::HashSet, fmt, fs, hash::Hash, io, os::unix::prelude::PermissionsExt, path};
+use std::{collections::HashSet, fmt, fs, io, os::unix::prelude::MetadataExt, path};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Index {
     entries: Vec<Entry>,
 }
@@ -30,7 +30,7 @@ impl Index {
             .entries
             .iter()
             .enumerate()
-            .find(|(_, x)| x.path.eq(&path.to_string()));
+            .find(|(_, x)| x.path().eq(&path.to_string()));
 
         match entry {
             Some((i, _)) => return Some(i),
@@ -38,6 +38,7 @@ impl Index {
         }
     }
 
+    // Change so gitignore warnings appear only if necessary
     pub fn add(&mut self, mut path: String) {
         let ignore_filter = IgnoreFilter::new(Paths::ignore());
 
@@ -46,20 +47,28 @@ impl Index {
                 path.push_str("/");
             }
 
-            path.push_str("**/*.*");
+            path.push_str("**/*");
 
             glob::glob(&path)
                 .unwrap()
                 .map(|x| x.unwrap())
+                .filter(|x| !x.is_dir())
                 .map(|x| x.to_string_lossy().to_string())
-                .filter(|x| ignore_filter.is_valid(x))
+                .filter(|x| {
+                    let is_valid = ignore_filter.is_valid(x);
+                    if !is_valid {
+                        println!("{} is included in gitignore", x);
+                    }
+                    is_valid
+                })
                 .collect()
         } else {
             if !ignore_filter.is_valid(&path) {
-                panic!("Path is included in gitignore");
+                println!("{} is included in gitignore", path);
+                vec![]
+            } else {
+                vec![path]
             }
-
-            vec![path]
         };
 
         for path in paths.iter() {
@@ -140,6 +149,10 @@ impl Index {
         // TODO: Sort diffrences
         dbg!(&delta);
     }
+
+    pub fn entries(&self) -> &[Entry] {
+        &self.entries
+    }
 }
 
 impl Storable for Index {
@@ -153,22 +166,21 @@ impl Storable for Index {
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Debug)]
-struct Entry {
+pub struct Entry {
     mode: u32,
     path: String,
     sha1: String,
 }
 
 impl Entry {
-    fn new_from_path(path: impl AsRef<path::Path> + fmt::Display) -> Entry {
+    pub fn new_from_path(path: impl AsRef<path::Path> + fmt::Display) -> Entry {
         let mode = fs::File::open(&path)
             .expect(&format!("Failed to open {} to retrieve metadata", path))
             .metadata()
             .expect(&format!("Failed to retrieve metadata for {}", path))
-            .permissions()
             .mode();
 
-        let sha1 = objects::Blob::new_from_wd_file(&path).sha1().into();
+        let sha1 = Blob::new_from_wd_file(&path).sha1().into();
 
         Entry {
             mode,
@@ -177,17 +189,41 @@ impl Entry {
         }
     }
 
-    fn try_new(path: impl AsRef<path::Path> + fmt::Display) -> Option<Entry> {
+    pub fn try_new(path: impl AsRef<path::Path> + fmt::Display) -> Option<Entry> {
         if !path::Path::try_exists(path.as_ref()).unwrap() {
             return None;
         }
 
         Some(Entry::new_from_path(path))
     }
+
+    pub fn path(&self) -> &str {
+        &self.path
+    }
+
+    pub fn path_mut(&mut self) -> &mut String {
+        &mut self.path
+    }
+
+    pub fn mode(&self) -> u32 {
+        self.mode
+    }
+
+    pub fn sha1(&self) -> &str {
+        &self.sha1
+    }
+
+    pub fn is_executable(&self) -> bool {
+        (self.mode & 0o001) != 0
+    }
+
+    pub fn is_top_level(&self) -> bool {
+        !self.path.contains("/")
+    }
 }
 
 impl Storable for Entry {
     fn store(&self) {
-        objects::Blob::new_from_wd_file(&self.path).store();
+        Blob::new_from_wd_file(&self.path).store();
     }
 }

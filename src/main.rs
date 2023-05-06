@@ -20,6 +20,7 @@ fn main() {
         Subcommands::Branch => NonStorable,
         Subcommands::Dev { command } => match command {
             DevSubcommands::Clean => DevCommands::clean(),
+            DevSubcommands::DbgTree { sha1 } => DevCommands::dbg_tree(&sha1),
         },
     };
 

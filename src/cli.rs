@@ -29,4 +29,5 @@ pub enum Subcommands {
 #[derive(Subcommand)]
 pub enum DevSubcommands {
     Clean,
+    DbgTree { sha1: String },
 }

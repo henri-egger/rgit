@@ -12,7 +12,11 @@ impl IgnoreFilter {
         IgnoreFilter { ignore_paths }
     }
 
+    // Contains method is too sensitive
     pub fn is_valid(&self, path: &str) -> bool {
-        !self.ignore_paths.iter().any(|x| path.contains(x))
+        !self
+            .ignore_paths
+            .iter()
+            .any(|x| path.starts_with(&(x.to_owned() + "/")) || path.eq(x))
     }
 }
