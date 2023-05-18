@@ -169,7 +169,7 @@ impl Storable for Index {
 pub struct Entry {
     mode: u32,
     path: String,
-    sha1: String,
+    sha: String,
 }
 
 impl Entry {
@@ -180,12 +180,12 @@ impl Entry {
             .expect(&format!("Failed to retrieve metadata for {}", path))
             .mode();
 
-        let sha1 = Blob::new_from_wd_file(&path).sha1().into();
+        let sha = Blob::new_from_wd_file(&path).sha().into();
 
         Entry {
             mode,
             path: path.to_string(),
-            sha1,
+            sha,
         }
     }
 
@@ -209,8 +209,8 @@ impl Entry {
         self.mode
     }
 
-    pub fn sha1(&self) -> &str {
-        &self.sha1
+    pub fn sha(&self) -> &str {
+        &self.sha
     }
 
     pub fn is_executable(&self) -> bool {

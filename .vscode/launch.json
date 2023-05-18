@@ -39,8 +39,9 @@
                 }
             },
             "args": [
-                "add",
-                "src/main.rs"
+                "dev",
+                "dbg-tree",
+                "44919acb78d00a1b926f6ca5991edccf3b60a8fd"
             ],
             "cwd": "${workspaceFolder}"
         },

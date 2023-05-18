@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod commands;
 mod dir_builder;
+pub mod identifiers;
 mod ignore;
 pub mod objects;
 mod paths;

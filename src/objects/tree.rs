@@ -1,24 +1,30 @@
 use crate::{
+    identifiers,
     objects::{index, Index},
     storing::{Object, Storable},
     Paths,
 };
-use ciborium;
-use serde::{Deserialize, Serialize};
 use sha1_smol::Sha1;
-use std::{fs, path};
+use std::{fs, io::Write, path};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+const SHA_LEN: usize = 40;
+const ENCODING_RADIX: u32 = 10;
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum EntryType {
     Tree(Tree),
     Blob(Entry),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+trait TreeEntry {
+    fn serialize_as_entry(&self) -> Vec<u8>;
+    fn deserialize_as_entry(buf: Vec<u8>) -> EntryType;
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Tree {
     entries: Vec<EntryType>,
     name: String,
-    sha1: Option<String>,
 }
 
 impl Tree {
@@ -26,21 +32,18 @@ impl Tree {
         let mut tree = Tree {
             entries: Vec::new(),
             name: String::from(name),
-            sha1: None,
         };
 
         tree.add_index_entries(entries);
-        tree.generate_shas();
 
         tree
     }
 
-    fn add_index_entries(&mut self, mut entries: Vec<index::Entry>) {
+    pub fn add_index_entries(&mut self, mut entries: Vec<index::Entry>) {
         // To avoid cloning and having multiple instances of entries which
         // have to be syncronized, the indicies of the affected items are collected
         // and then reversed, so that they can then be removed from the original entries
         // array. This might be simpler if entries was just a hashset but it is what it is rn :)
-
         entries
             .iter()
             .enumerate()
@@ -83,81 +86,72 @@ impl Tree {
         }
     }
 
-    fn generate_sha1(&self) -> String {
-        let mut bytes = Vec::new();
-        ciborium::ser::into_writer(self, &mut bytes)
-            .expect("Failed to serialize tree to generate hash");
+    // fn get_trees(&self) -> impl Iterator<Item = (usize, &Tree)> {
+    //     self.entries
+    //         .iter()
+    //         .enumerate()
+    //         .filter(|(_, entry_type)| match entry_type {
+    //             EntryType::Tree(_) => true,
+    //             EntryType::Blob(_) => false,
+    //         })
+    //         .map(|(i, entry_type)| match entry_type {
+    //             EntryType::Tree(tree) => (i, tree),
+    //             EntryType::Blob(_) => panic!("Blob after tree filtering"),
+    //         })
+    //         .rev()
+    // }
+
+    // fn get_trees_mut(&mut self) -> impl Iterator<Item = (usize, &mut Tree)> {
+    //     self.entries
+    //         .iter_mut()
+    //         .enumerate()
+    //         .filter(|(_, entry_type)| match entry_type {
+    //             EntryType::Tree(_) => true,
+    //             EntryType::Blob(_) => false,
+    //         })
+    //         .map(|(i, entry_type)| match entry_type {
+    //             EntryType::Tree(tree) => (i, tree),
+    //             EntryType::Blob(_) => panic!("Blob after tree filtering"),
+    //         })
+    //         .rev()
+    // }
+
+    pub fn sha(&self) -> String {
+        let buf = self.serialize();
 
         let mut hasher = Sha1::new();
-        hasher.update(&bytes);
-        let sha1 = hasher.digest().to_string();
+        hasher.update(&buf);
+        let sha = hasher.digest().to_string();
 
-        sha1
+        sha
     }
 
-    fn generate_shas(&mut self) {
-        self.get_trees_mut()
-            .for_each(|(_, tree)| tree.generate_shas());
+    // util function
+    pub fn print_shas(&self) {
+        println!("{}: {}", self.name, self.sha());
 
-        self.sha1 = Some(self.generate_sha1());
-    }
-
-    fn get_trees(&self) -> impl Iterator<Item = (usize, &Tree)> {
-        self.entries
-            .iter()
-            .enumerate()
-            .filter(|(_, entry_type)| match entry_type {
-                EntryType::Tree(_) => true,
-                EntryType::Blob(_) => false,
-            })
-            .map(|(i, entry_type)| match entry_type {
-                EntryType::Tree(tree) => (i, tree),
-                EntryType::Blob(_) => panic!("Blob after tree filtering"),
-            })
-            .rev()
-    }
-
-    fn get_trees_mut(&mut self) -> impl Iterator<Item = (usize, &mut Tree)> {
-        self.entries
-            .iter_mut()
-            .enumerate()
-            .filter(|(_, entry_type)| match entry_type {
-                EntryType::Tree(_) => true,
-                EntryType::Blob(_) => false,
-            })
-            .map(|(i, entry_type)| match entry_type {
-                EntryType::Tree(tree) => (i, tree),
-                EntryType::Blob(_) => panic!("Blob after tree filtering"),
-            })
-            .rev()
-    }
-
-    pub fn sha1(&self) -> Option<&str> {
-        match &self.sha1 {
-            Some(sha1) => Some(sha1),
-            None => None,
+        for entry in &self.entries {
+            match entry {
+                EntryType::Tree(tree) => tree.print_shas(),
+                EntryType::Blob(blob) => println!("{}: {}", blob.file_name, blob.sha),
+            };
         }
     }
 }
 
-// TODO: Serialize blobs and trees individually, probably not possible with ciborium
 impl Storable for Tree {
     fn store(&self) {
-        // We need to create a copy of the data to remove inner trees and entries while storing
-        let mut tree = self.to_owned();
-
-        tree.entries.iter().for_each(|entry_type| match entry_type {
+        self.entries.iter().for_each(|entry_type| match entry_type {
             EntryType::Tree(tree) => tree.store(),
-            EntryType::Blob(entry) => entry.store(),
+            EntryType::Blob(_) => {}
         });
 
-        tree.get_trees_mut()
-            .for_each(|(_, tree)| tree.entries = Vec::new());
+        let buf = self.serialize();
 
-        let file = fs::File::create(Paths::objects() + "/" + tree.sha1().unwrap())
+        let mut file = fs::File::create(Paths::objects() + "/" + &self.sha())
             .expect("Failed to create file to store tree");
 
-        ciborium::ser::into_writer(&tree, file).expect("Failed to write data to tree");
+        file.write_all(&buf).unwrap();
     }
 }
 
@@ -171,38 +165,103 @@ impl From<Index> for Tree {
 }
 
 impl Object for Tree {
-    fn new_from_object_file<'de>(sha1: &str) -> Self
-    where
-        Self: Deserialize<'de>,
-    {
-        let file = fs::File::open(Paths::objects() + "/" + &sha1)
-            .expect(&format!("Failed to open {} to create object", sha1));
+    fn new_from_object_file(sha: &str, name: Option<String>) -> Self {
+        let buf = fs::read(Paths::objects() + "/" + sha).unwrap();
 
-        let mut tree: Tree =
-            ciborium::de::from_reader(file).expect("Failed to read data from object");
+        let null_i = buf.iter().position(|x| *x == b'\0').unwrap();
+        let buf = Vec::from(&buf[null_i + 1..]);
 
-        let new_entries: Vec<EntryType> = tree
-            .entries
-            .iter()
-            .map(|entry_type| match entry_type {
-                EntryType::Tree(tree) => {
-                    EntryType::Tree(Tree::new_from_object_file(tree.sha1().unwrap()))
+        let bufs = buf.split(|x| *x == b'\0').filter(|x| x.len() != 0);
+
+        let entries = bufs
+            .map(|buf| {
+                if buf.starts_with(identifiers::TREE.as_bytes()) {
+                    Tree::deserialize_as_entry(buf.into())
+                } else if buf.starts_with(identifiers::BLOB.as_bytes()) {
+                    Entry::deserialize_as_entry(buf.into())
+                } else {
+                    panic!();
                 }
-                EntryType::Blob(entry) => EntryType::Blob(entry.to_owned()),
             })
             .collect();
 
-        tree.entries = new_entries;
+        let tree = Tree {
+            entries,
+            name: name.unwrap(),
+        };
 
         tree
     }
+
+    fn serialize(&self) -> Vec<u8> {
+        let mut buf = Vec::new();
+
+        buf.extend(identifiers::TREE.bytes());
+        buf.push(b' ');
+
+        let mut entries = self.entries.to_owned();
+        entries.sort();
+        let entries = entries
+            .iter()
+            .map(|entry| match entry {
+                EntryType::Tree(tree) => tree.serialize_as_entry(),
+                EntryType::Blob(blob) => blob.serialize_as_entry(),
+            })
+            .fold(&mut Vec::new(), |buf, entry| {
+                buf.extend(entry);
+                buf.push(b'\0');
+                buf
+            })
+            .to_owned();
+
+        buf.extend(entries.len().to_string().bytes());
+        buf.push(b'\0');
+        buf.extend(entries);
+
+        buf
+    }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+impl TreeEntry for Tree {
+    fn serialize_as_entry(&self) -> Vec<u8> {
+        format!(
+            "{} {} {} {}",
+            identifiers::TREE,
+            0o755,
+            self.name,
+            self.sha()
+        )
+        .as_bytes()
+        .to_owned()
+    }
+
+    fn deserialize_as_entry(mut buf: Vec<u8>) -> EntryType {
+        if !buf.starts_with(identifiers::TREE.as_bytes()) {
+            panic!()
+        }
+
+        let mut parts = buf.split(|x| *x == b' ');
+
+        parts.next();
+        parts.next();
+        let name = parts.next().unwrap();
+        let sha = parts.next().unwrap();
+
+        let name = String::from_utf8(name.into()).unwrap();
+
+        let sha = String::from_utf8(sha.into()).unwrap();
+
+        let tree = Tree::new_from_object_file(&sha, Some(name));
+
+        EntryType::Tree(tree)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct Entry {
     mode: u32,
     file_name: String,
-    sha1: String,
+    sha: String,
 }
 
 impl From<index::Entry> for Entry {
@@ -214,14 +273,14 @@ impl From<index::Entry> for Entry {
         Entry {
             mode: entry.mode(),
             file_name: String::from(entry.path()),
-            sha1: String::from(entry.sha1()),
+            sha: String::from(entry.sha()),
         }
     }
 }
 
 impl Storable for Entry {
     fn store(&self) {
-        let path = Paths::objects() + "/" + &self.sha1;
+        let path = Paths::objects() + "/" + &self.sha;
         let path = path::Path::new(&path);
         if !path.exists() {
             eprintln!("{} was not found while checking", path.to_string_lossy());
@@ -229,4 +288,44 @@ impl Storable for Entry {
     }
 }
 
-impl Object for Entry {}
+impl TreeEntry for Entry {
+    fn serialize_as_entry(&self) -> Vec<u8> {
+        format!(
+            "{} {} {} {}",
+            identifiers::BLOB,
+            self.mode,
+            self.file_name,
+            self.sha
+        )
+        .as_bytes()
+        .to_owned()
+    }
+
+    fn deserialize_as_entry(buf: Vec<u8>) -> EntryType {
+        if !buf.starts_with(identifiers::BLOB.as_bytes()) {
+            panic!()
+        }
+
+        let mut parts = buf.split(|x| *x == b' ');
+
+        parts.next();
+        let mode = parts.next().unwrap();
+        let file_name = parts.next().unwrap();
+        let sha = parts.next().unwrap();
+
+        let mode = String::from_utf8(mode.into()).unwrap();
+        let mode = u32::from_str_radix(&mode, ENCODING_RADIX).unwrap();
+
+        let file_name = String::from_utf8(file_name.into()).unwrap();
+
+        let sha = String::from_utf8(sha.into()).unwrap();
+
+        let entry = Entry {
+            mode,
+            file_name,
+            sha,
+        };
+
+        EntryType::Blob(entry)
+    }
+}

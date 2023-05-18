@@ -37,9 +37,18 @@ impl DevCommands {
         CommandReturnType::Storable(Box::new(DirBuilder::clean()))
     }
 
-    pub fn dbg_tree(sha1: &str) -> CommandReturnType {
-        let tree = Tree::new_from_object_file(sha1);
-        dbg!(&tree);
+    pub fn build_tree() -> CommandReturnType {
+        let index = objects::Index::new_from_index_file();
+        let tree = Tree::from(index);
+        tree.print_shas();
+
         CommandReturnType::Storable(Box::new(tree))
+    }
+
+    pub fn dbg_tree(sha: &str) -> CommandReturnType {
+        let tree = Tree::new_from_object_file(sha, Some(String::from("ROOT")));
+        dbg!(&tree);
+
+        CommandReturnType::NonStorable
     }
 }
