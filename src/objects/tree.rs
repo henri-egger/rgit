@@ -9,6 +9,8 @@ use std::{fs, io::Write, path};
 
 const ENCODING_RADIX: u32 = 10;
 
+// Hello ellen
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum EntryType {
     Tree(Tree),
