@@ -7,7 +7,6 @@ use crate::{
 use sha1_smol::Sha1;
 use std::{fs, io::Write, path};
 
-const SHA_LEN: usize = 40;
 const ENCODING_RADIX: u32 = 10;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -185,12 +184,10 @@ impl Object for Tree {
             })
             .collect();
 
-        let tree = Tree {
+        Tree {
             entries,
             name: name.unwrap(),
-        };
-
-        tree
+        }
     }
 
     fn serialize(&self) -> Vec<u8> {
@@ -235,7 +232,7 @@ impl TreeEntry for Tree {
         .to_owned()
     }
 
-    fn deserialize_as_entry(mut buf: Vec<u8>) -> EntryType {
+    fn deserialize_as_entry(buf: Vec<u8>) -> EntryType {
         if !buf.starts_with(identifiers::TREE.as_bytes()) {
             panic!()
         }
