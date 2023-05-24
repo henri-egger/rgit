@@ -45,7 +45,7 @@ impl Storable for Blob {
 impl Object for Blob {
     fn new_from_object_file(sha: &str, _: Option<String>) -> Self {
         let buf = fs::read(Paths::objects() + "/" + sha).unwrap();
-        let null_i = *buf.iter().find(|x| **x == b'\0').unwrap() as usize;
+        let null_i = buf.iter().position(|x| *x == b'\0').unwrap();
 
         let bytes = Vec::from(&buf[null_i + 1..]);
 
