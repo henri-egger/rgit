@@ -14,7 +14,7 @@ fn main() {
     let command_return_val: CommandReturnType = match cli.command {
         Subcommands::Init => Commands::init(),
         Subcommands::Add { file } => Commands::add(file),
-        Subcommands::Commit => Commands::commit(),
+        Subcommands::Commit { message } => Commands::commit(message),
         Subcommands::Status => Commands::status(),
         Subcommands::Checkout => NonStorable,
         Subcommands::Branch => NonStorable,

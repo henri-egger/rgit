@@ -29,16 +29,10 @@ impl Commands {
         CommandReturnType::NonStorable
     }
 
-    pub fn commit() -> CommandReturnType {
+    pub fn commit(message: String) -> CommandReturnType {
         let index = Index::new_from_index_file();
         let tree = Tree::from(index);
-        let parent = Commit::new_from_object_file("9622c332b4ee2aa550ad7ea3be71082a0271aeca", None);
-        let commit = Commit::new(
-            tree,
-            Some(parent),
-            String::from("Some second commit message"),
-        );
-        dbg!(&commit);
+        let commit = Commit::new(tree, None, message);
         dbg!(commit.sha());
 
         CommandReturnType::Storable(Box::new(commit))

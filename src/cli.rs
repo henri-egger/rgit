@@ -16,7 +16,9 @@ pub enum Subcommands {
     Add {
         file: String,
     },
-    Commit,
+    Commit {
+        message: String,
+    },
     Status,
     Checkout,
     Branch,
