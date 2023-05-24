@@ -7,6 +7,8 @@ use crate::{
 use sha1_smol::Sha1;
 use std::{fs, io::Write};
 
+// TODO: make parents lazy loaded
+#[derive(Debug)]
 pub struct Commit {
     tree: Tree,
     parent: Option<Box<Commit>>,

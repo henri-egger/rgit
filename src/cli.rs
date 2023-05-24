@@ -31,4 +31,5 @@ pub enum DevSubcommands {
     Clean,
     BuildTree,
     DbgTree { sha: String },
+    DbgCommit { sha: String },
 }

@@ -14,7 +14,7 @@ fn main() {
     let command_return_val: CommandReturnType = match cli.command {
         Subcommands::Init => Commands::init(),
         Subcommands::Add { file } => Commands::add(file),
-        Subcommands::Commit => NonStorable,
+        Subcommands::Commit => Commands::commit(),
         Subcommands::Status => Commands::status(),
         Subcommands::Checkout => NonStorable,
         Subcommands::Branch => NonStorable,
@@ -22,6 +22,7 @@ fn main() {
             DevSubcommands::Clean => DevCommands::clean(),
             DevSubcommands::BuildTree => DevCommands::build_tree(),
             DevSubcommands::DbgTree { sha } => DevCommands::dbg_tree(&sha),
+            DevSubcommands::DbgCommit { sha } => DevCommands::dbg_commit(&sha),
         },
     };
 
