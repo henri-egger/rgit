@@ -9,11 +9,11 @@ rgit is more of an experiment and therefore lacking many of gits features. Also,
 Implemented features:
 
 -   Initializing a repository (`init`)
--   Staging area (`add`)
+-   Adding to staging area (`add`)
 -   Checking status (`status`)
 -   Committing (`commit`)
 -   Logging commits (`log`)
--   Load a previous commit (`checkout`)
+-   Loading a previous commit (`checkout`)
 -   Some commands useful for development (list them with `dev -h`)
 
 ## Usage
