@@ -37,6 +37,13 @@ impl Commands {
 
         CommandReturnType::Storable(Box::new(commit))
     }
+
+    pub fn checkout(sha: String, path: String) -> CommandReturnType {
+        let commit = Commit::new_from_object_file(&sha, None);
+        commit.restore(path);
+
+        CommandReturnType::NonStorable
+    }
 }
 
 pub struct DevCommands;
@@ -54,15 +61,15 @@ impl DevCommands {
         CommandReturnType::Storable(Box::new(tree))
     }
 
-    pub fn dbg_tree(sha: &str) -> CommandReturnType {
-        let tree = Tree::new_from_object_file(sha, Some(String::from("ROOT")));
+    pub fn dbg_tree(sha: String) -> CommandReturnType {
+        let tree = Tree::new_from_object_file(&sha, Some(String::from("ROOT")));
         dbg!(&tree);
 
         CommandReturnType::NonStorable
     }
 
-    pub fn dbg_commit(sha: &str) -> CommandReturnType {
-        let commit = Commit::new_from_object_file(sha, None);
+    pub fn dbg_commit(sha: String) -> CommandReturnType {
+        let commit = Commit::new_from_object_file(&sha, None);
         dbg!(&commit);
 
         CommandReturnType::NonStorable

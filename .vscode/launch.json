@@ -39,9 +39,9 @@
                 }
             },
             "args": [
-                "dev",
-                "dbg-tree",
-                "44919acb78d00a1b926f6ca5991edccf3b60a8fd"
+                "checkout",
+                "e1388a9483be62d9b26316370b257eaa365d3048",
+                "checkout_dir"
             ],
             "cwd": "${workspaceFolder}"
         },

@@ -29,6 +29,10 @@ impl Blob {
 
         sha
     }
+
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
 }
 
 impl Storable for Blob {

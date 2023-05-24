@@ -39,6 +39,10 @@ impl Commit {
 
         sha
     }
+
+    pub fn restore(&self, path: String) {
+        self.tree.restore(path);
+    }
 }
 
 impl Storable for Commit {

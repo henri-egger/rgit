@@ -16,13 +16,13 @@ fn main() {
         Subcommands::Add { file } => Commands::add(file),
         Subcommands::Commit { message } => Commands::commit(message),
         Subcommands::Status => Commands::status(),
-        Subcommands::Checkout => NonStorable,
+        Subcommands::Checkout { sha, path } => Commands::checkout(sha, path),
         Subcommands::Branch => NonStorable,
         Subcommands::Dev { command } => match command {
             DevSubcommands::Clean => DevCommands::clean(),
             DevSubcommands::BuildTree => DevCommands::build_tree(),
-            DevSubcommands::DbgTree { sha } => DevCommands::dbg_tree(&sha),
-            DevSubcommands::DbgCommit { sha } => DevCommands::dbg_commit(&sha),
+            DevSubcommands::DbgTree { sha } => DevCommands::dbg_tree(sha),
+            DevSubcommands::DbgCommit { sha } => DevCommands::dbg_commit(sha),
         },
     };
 

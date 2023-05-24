@@ -1,11 +1,11 @@
 use crate::{
     identifiers,
-    objects::{index, Index},
+    objects::{index, Blob, Index},
     storing::{Object, Storable},
     Paths,
 };
 use sha1_smol::Sha1;
-use std::{fs, io::Write, path};
+use std::{fs, io::Write, os::unix::prelude::PermissionsExt, path};
 
 const ENCODING_RADIX: u32 = 10;
 
@@ -136,6 +136,29 @@ impl Tree {
             };
         }
     }
+
+    pub fn restore(&self, path: String) {
+        let is_root = self.name.eq("ROOT");
+
+        if path::PathBuf::from(&path).exists() && is_root {
+            panic!("{} already exists", path);
+        }
+
+        let path = if is_root {
+            path
+        } else {
+            format!("{}/{}", path, self.name)
+        };
+
+        fs::DirBuilder::new().recursive(true).create(&path).unwrap();
+
+        for entry in &self.entries {
+            match entry {
+                EntryType::Tree(tree) => tree.restore(path.to_owned()),
+                EntryType::Blob(blob) => blob.restore(path.to_owned()),
+            }
+        }
+    }
 }
 
 impl From<Index> for Tree {
@@ -256,6 +279,21 @@ struct Entry {
     mode: u32,
     file_name: String,
     sha: String,
+}
+
+impl Entry {
+    fn restore(&self, path: String) {
+        let path = format!("{}/{}", path, self.file_name);
+        let mut file = fs::File::create(path).unwrap();
+
+        file.set_permissions(fs::Permissions::from_mode(self.mode))
+            .unwrap();
+
+        let blob = Blob::new_from_object_file(&self.sha, None);
+        let buf = blob.bytes();
+
+        file.write(buf).unwrap();
+    }
 }
 
 impl From<index::Entry> for Entry {

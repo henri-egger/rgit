@@ -20,7 +20,10 @@ pub enum Subcommands {
         message: String,
     },
     Status,
-    Checkout,
+    Checkout {
+        sha: String,
+        path: String,
+    },
     Branch,
     Dev {
         #[command(subcommand)]
