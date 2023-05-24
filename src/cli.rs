@@ -25,6 +25,7 @@ pub enum Subcommands {
         path: String,
     },
     Branch,
+    Log,
     Dev {
         #[command(subcommand)]
         command: DevSubcommands,

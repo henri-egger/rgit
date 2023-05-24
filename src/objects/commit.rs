@@ -8,7 +8,7 @@ use sha1_smol::Sha1;
 use std::{fs, io::Write};
 
 // TODO: make parents lazy loaded
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Commit {
     tree: Tree,
     parent: Option<Box<Commit>>,
@@ -42,6 +42,13 @@ impl Commit {
 
     pub fn restore(&self, path: String) {
         self.tree.restore(path);
+    }
+
+    pub fn log(&self) {
+        println!("commit {}\n{}\n", self.sha(), self.message);
+        if let Some(commit) = &self.parent {
+            commit.log();
+        }
     }
 }
 

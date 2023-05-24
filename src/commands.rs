@@ -1,5 +1,5 @@
 use crate::{
-    objects::{Commit, Index, Tree},
+    objects::{Commit, Head, Index, Tree},
     storing::{Object, Storable},
     DirBuilder,
 };
@@ -32,8 +32,15 @@ impl Commands {
     pub fn commit(message: String) -> CommandReturnType {
         let index = Index::new_from_index_file();
         let tree = Tree::from(index);
-        let commit = Commit::new(tree, None, message);
+
+        let head = Head::read_HEAD();
+        let parent = head.commit().to_owned();
+
+        let commit = Commit::new(tree, parent, message);
+        dbg!(&commit);
         dbg!(commit.sha());
+
+        head.update(&commit);
 
         CommandReturnType::Storable(Box::new(commit))
     }
@@ -41,6 +48,17 @@ impl Commands {
     pub fn checkout(sha: String, path: String) -> CommandReturnType {
         let commit = Commit::new_from_object_file(&sha, None);
         commit.restore(path);
+
+        CommandReturnType::NonStorable
+    }
+
+    pub fn log() -> CommandReturnType {
+        let head = Head::read_HEAD();
+        let commit = head.commit().to_owned();
+
+        if let Some(commit) = commit {
+            commit.log();
+        }
 
         CommandReturnType::NonStorable
     }

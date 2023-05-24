@@ -18,6 +18,7 @@ fn main() {
         Subcommands::Status => Commands::status(),
         Subcommands::Checkout { sha, path } => Commands::checkout(sha, path),
         Subcommands::Branch => NonStorable,
+        Subcommands::Log => Commands::log(),
         Subcommands::Dev { command } => match command {
             DevSubcommands::Clean => DevCommands::clean(),
             DevSubcommands::BuildTree => DevCommands::build_tree(),

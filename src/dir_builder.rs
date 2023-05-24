@@ -24,6 +24,9 @@ impl Storable for DirBuilder {
             fs::create_dir_all(&dir).expect(&format!("Failed to create directory {}", dir));
         }
 
+        fs::write(Paths::HEAD(), "main").unwrap();
+        fs::File::create(Paths::heads() + "/main").unwrap();
+
         fs::File::create(Paths::index())
             .expect(&format!("Failed to create directory {}", Paths::index()));
     }
