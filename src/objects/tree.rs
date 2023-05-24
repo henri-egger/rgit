@@ -85,20 +85,20 @@ impl Tree {
         }
     }
 
-    // fn get_trees(&self) -> impl Iterator<Item = (usize, &Tree)> {
-    //     self.entries
-    //         .iter()
-    //         .enumerate()
-    //         .filter(|(_, entry_type)| match entry_type {
-    //             EntryType::Tree(_) => true,
-    //             EntryType::Blob(_) => false,
-    //         })
-    //         .map(|(i, entry_type)| match entry_type {
-    //             EntryType::Tree(tree) => (i, tree),
-    //             EntryType::Blob(_) => panic!("Blob after tree filtering"),
-    //         })
-    //         .rev()
-    // }
+    fn get_trees(&self) -> impl Iterator<Item = (usize, &Tree)> {
+        self.entries
+            .iter()
+            .enumerate()
+            .filter(|(_, entry_type)| match entry_type {
+                EntryType::Tree(_) => true,
+                EntryType::Blob(_) => false,
+            })
+            .map(|(i, entry_type)| match entry_type {
+                EntryType::Tree(tree) => (i, tree),
+                EntryType::Blob(_) => panic!("Blob after tree filtering"),
+            })
+            .rev()
+    }
 
     // fn get_trees_mut(&mut self) -> impl Iterator<Item = (usize, &mut Tree)> {
     //     self.entries
@@ -138,12 +138,18 @@ impl Tree {
     }
 }
 
+impl From<Index> for Tree {
+    fn from(index: Index) -> Self {
+        let entries = index.entries().to_owned();
+        let tree = Tree::new("ROOT", entries);
+
+        tree
+    }
+}
+
 impl Storable for Tree {
     fn store(&self) {
-        self.entries.iter().for_each(|entry_type| match entry_type {
-            EntryType::Tree(tree) => tree.store(),
-            EntryType::Blob(_) => {}
-        });
+        self.get_trees().for_each(|(_, tree)| tree.store());
 
         let buf = self.serialize();
 
@@ -151,15 +157,6 @@ impl Storable for Tree {
             .expect("Failed to create file to store tree");
 
         file.write_all(&buf).unwrap();
-    }
-}
-
-impl From<Index> for Tree {
-    fn from(index: Index) -> Self {
-        let entries = index.entries().to_owned();
-        let tree = Tree::new("ROOT", entries);
-
-        tree
     }
 }
 
