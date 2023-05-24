@@ -37,8 +37,6 @@ impl Commands {
         let parent = head.commit().to_owned();
 
         let commit = Commit::new(tree, parent, message);
-        dbg!(&commit);
-        dbg!(commit.sha());
 
         head.update(&commit);
 
