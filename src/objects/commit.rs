@@ -74,7 +74,6 @@ impl Object for Commit {
         parts.next();
         let tree_sha = parts.next().unwrap();
         let tree_sha = &tree_sha[identifiers::TREE.len() + 1..];
-        assert_eq!(tree_sha.len(), 40);
         let tree_sha = String::from_utf8(tree_sha.into()).unwrap();
         let tree = Tree::new_from_object_file(&tree_sha, Some(String::from("ROOT")));
 
