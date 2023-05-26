@@ -181,7 +181,7 @@ pub struct Entry {
 }
 
 impl Entry {
-    /// Reads teh metadata of the file at the path and creates an Entry from it
+    /// Reads the metadata of the file at the path and creates an Entry from it
     pub fn new_from_path(path: impl AsRef<path::Path> + fmt::Display) -> Entry {
         let mode = fs::File::open(&path)
             .expect(&format!("Failed to open {} to retrieve metadata", path))
