@@ -84,7 +84,7 @@ impl Index {
 
     // TODO: Not update if shas match
     /// Creates a new entry from the path and adds it to the index, updates files already existing in
-    /// the index and removes files which only exist in the index and at the path
+    /// the index and removes files which only exist in the index and not at the path
     fn add_entry_from_path<T>(&mut self, path: T) -> Result<(), io::Error>
     where
         T: AsRef<path::Path> + fmt::Display,
