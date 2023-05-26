@@ -7,6 +7,8 @@ use crate::{
 use sha1_smol::Sha1;
 use std::{fs, io::Write, os::unix::prelude::PermissionsExt, path};
 
+// Used because actual numbers such as file size are stored as strings in serialized objects and then
+// reverted back
 const ENCODING_RADIX: u32 = 10;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -16,7 +18,9 @@ enum EntryType {
 }
 
 trait TreeEntry {
+    /// Serializes the entry as an entry of a tree object, not as the object itself
     fn serialize_as_entry(&self) -> Vec<u8>;
+    /// Creates the corrisponding EntryType from an entry of a serialized tree object
     fn deserialize_as_entry(buf: Vec<u8>) -> EntryType;
 }
 
@@ -27,6 +31,7 @@ pub struct Tree {
 }
 
 impl Tree {
+    /// Creates a new tree from index entries, converting them to tree entries
     pub fn new(name: &str, entries: Vec<index::Entry>) -> Tree {
         let mut tree = Tree {
             entries: Vec::new(),
@@ -38,7 +43,8 @@ impl Tree {
         tree
     }
 
-    pub fn add_index_entries(&mut self, mut entries: Vec<index::Entry>) {
+    /// Recursively fills a tree object with a list of index entries
+    fn add_index_entries(&mut self, mut entries: Vec<index::Entry>) {
         // To avoid cloning and having multiple instances of entries which
         // have to be syncronized, the indicies of the affected items are collected
         // and then reversed, so that they can then be removed from the original entries
@@ -85,6 +91,7 @@ impl Tree {
         }
     }
 
+    /// Returns the trees entries, filtered to be only trees
     fn get_trees(&self) -> impl Iterator<Item = (usize, &Tree)> {
         self.entries
             .iter()
@@ -126,6 +133,7 @@ impl Tree {
     }
 
     // util function
+    /// Recursively prints all the shas the tree holds
     pub fn print_shas(&self) {
         println!("{}: {}", self.name, self.sha());
 
@@ -137,6 +145,7 @@ impl Tree {
         }
     }
 
+    /// Restores the actual directory system the tree represents into a given path
     pub fn restore(&self, path: String) {
         let is_root = self.name.eq("ROOT");
 
@@ -161,6 +170,7 @@ impl Tree {
     }
 }
 
+// Creates a tree from an index
 impl From<Index> for Tree {
     fn from(index: Index) -> Self {
         let entries = index.entries().to_owned();
@@ -282,6 +292,7 @@ struct Entry {
 }
 
 impl Entry {
+    /// Restores the actual file the entry is representing
     fn restore(&self, path: String) {
         let path = format!("{}/{}", path, self.file_name);
         let mut file = fs::File::create(path).unwrap();

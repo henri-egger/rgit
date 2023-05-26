@@ -5,6 +5,7 @@ pub struct IgnoreFilter {
 }
 
 impl IgnoreFilter {
+    /// Creates a new ignore filter loaded with the paths mentioned in .gitignore
     pub fn new(ignore_path: impl AsRef<path::Path>) -> IgnoreFilter {
         let ignore_files = fs::read_to_string(ignore_path).unwrap() + "\n.git\n.rgit";
         let ignore_paths = ignore_files.lines().map(|x| x.to_string()).collect();
@@ -12,7 +13,6 @@ impl IgnoreFilter {
         IgnoreFilter { ignore_paths }
     }
 
-    // Contains method is too sensitive
     pub fn is_valid(&self, path: &str) -> bool {
         !self
             .ignore_paths

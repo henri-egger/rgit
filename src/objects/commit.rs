@@ -40,10 +40,12 @@ impl Commit {
         sha
     }
 
+    /// Recreates the tree which the commit is holding
     pub fn restore(&self, path: String) {
         self.tree.restore(path);
     }
 
+    /// Logs all parents of the tree recursively
     pub fn log(&self) {
         println!("commit {}\n{}\n", self.sha(), self.message);
         if let Some(commit) = &self.parent {

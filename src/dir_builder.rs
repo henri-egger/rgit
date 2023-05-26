@@ -1,6 +1,7 @@
 use crate::{storing::Storable, Paths};
 use std::{fs, path};
 
+/// Struct implementing the store trait so it can be returned to main for centralized fs operations
 pub struct DirBuilder;
 
 impl DirBuilder {

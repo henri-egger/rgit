@@ -22,6 +22,7 @@ impl Index {
         fs::write(Paths::index(), self.to_json_string()).expect("Failed to update index file")
     }
 
+    /// Returns the index of an entry of the same path if it exists
     fn query_by_path<T>(&self, path: T) -> Option<usize>
     where
         T: AsRef<path::Path> + fmt::Display,
@@ -38,7 +39,9 @@ impl Index {
         }
     }
 
-    // Change so gitignore warnings appear only if necessary
+    // TODO: Change so gitignore warnings appear only if necessary
+    /// Finds all individual paths for all recursively contained files of a certain path and calls
+    /// add_entry_from_path() for each of them
     pub fn add(&mut self, mut path: String) {
         let ignore_filter = IgnoreFilter::new(Paths::ignore());
 
@@ -80,6 +83,8 @@ impl Index {
     }
 
     // TODO: Not update if shas match
+    /// Creates a new entry from the path and adds it to the index, updates files already existing in
+    /// the index and removes files which only exist in the index and at the path
     fn add_entry_from_path<T>(&mut self, path: T) -> Result<(), io::Error>
     where
         T: AsRef<path::Path> + fmt::Display,
@@ -112,6 +117,7 @@ impl Index {
         Ok(())
     }
 
+    /// Retrieves the index data stored in the index file
     pub fn new_from_index_file() -> Index {
         let mut json_string =
             fs::read_to_string(Paths::index()).expect(&format!("Failed to read index file"));
@@ -131,6 +137,7 @@ impl Index {
         index
     }
 
+    /// Prints the status as debug output
     pub fn status(&self) {
         let ignore_filter = IgnoreFilter::new(Paths::ignore());
 
@@ -165,6 +172,7 @@ impl Storable for Index {
     }
 }
 
+/// Holds the metadata about a file in the working directory
 #[derive(Serialize, Deserialize, PartialEq, Eq, Hash, Clone, Debug)]
 pub struct Entry {
     mode: u32,
@@ -173,6 +181,7 @@ pub struct Entry {
 }
 
 impl Entry {
+    /// Reads teh metadata of the file at the path and creates an Entry from it
     pub fn new_from_path(path: impl AsRef<path::Path> + fmt::Display) -> Entry {
         let mode = fs::File::open(&path)
             .expect(&format!("Failed to open {} to retrieve metadata", path))
@@ -189,6 +198,7 @@ impl Entry {
         }
     }
 
+    /// Tries to create an entry from a path, returns Option::None if the path doesn't exists
     pub fn try_new(path: impl AsRef<path::Path> + fmt::Display) -> Option<Entry> {
         if !path::Path::try_exists(path.as_ref()).unwrap() {
             return None;

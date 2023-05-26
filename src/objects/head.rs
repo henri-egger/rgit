@@ -2,6 +2,7 @@ use std::fs;
 
 use crate::{objects::Commit, storing::Object, Paths};
 
+/// Representation of a head ref in the .rgit/refs/heads directory
 pub struct Head {
     name: String,
     commit: Option<Commit>,
@@ -24,6 +25,7 @@ impl Head {
         }
     }
 
+    /// Returns the name of the current head ref
     #[allow(non_snake_case)]
     fn HEAD() -> String {
         let buf = fs::read(Paths::HEAD()).unwrap();
@@ -31,11 +33,13 @@ impl Head {
         HEAD
     }
 
+    /// Returns the head ref currently pointed to in the HEAD file
     #[allow(non_snake_case)]
     pub fn read_HEAD() -> Head {
         Head::read(Head::HEAD())
     }
 
+    /// Updates the head ref file
     #[allow(non_snake_case)]
     pub fn update(&self, commit: &Commit) {
         fs::write(Paths::heads() + "/" + &self.name, commit.sha()).unwrap();

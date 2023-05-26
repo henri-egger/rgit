@@ -9,6 +9,7 @@ pub enum CommandReturnType {
     NonStorable,
 }
 
+/// Collection of git commands to be matched with the cli commands
 pub struct Commands;
 
 impl Commands {

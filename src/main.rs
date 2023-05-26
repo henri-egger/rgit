@@ -27,6 +27,7 @@ fn main() {
         },
     };
 
+    // Centralized fs operations at the end of execution
     if let Storable(storable) = command_return_val {
         storable.store();
     }

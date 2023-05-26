@@ -1,5 +1,7 @@
 use clap::{Parser, Subcommand};
 
+// CLI commands structure represented as a data structure
+
 #[derive(Parser)]
 #[command(name = "rgit")]
 #[command(author = "Henri Egger")]

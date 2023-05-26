@@ -6,6 +6,7 @@ const HEAD: &str = "/HEAD";
 const INDEX: &str = "/index.json";
 const IGNORE: &str = ".gitignore";
 
+/// Convinience Struct to centralize the directory paths
 pub struct Paths;
 
 impl Paths {

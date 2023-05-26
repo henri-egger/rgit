@@ -15,6 +15,7 @@ impl Blob {
         Blob { bytes }
     }
 
+    /// Creates a new blob from the contents of a file found in the working directory
     pub fn new_from_wd_file(path: impl AsRef<path::Path> + fmt::Display) -> Blob {
         let bytes = fs::read(&path).expect(&format!("Failed to read {} to create blob", path));
         let blob = Blob::new_from_bytes(bytes);
