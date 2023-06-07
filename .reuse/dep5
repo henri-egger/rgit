@@ -7,6 +7,6 @@ Files: src/*
 Copyright: Henri Egger <henri.egger@gmail.com>
 License: MIT
 
-Files: .github/* .vscode .gitignore Cargo.lock Cargo.toml README.md test.txt 
+Files: .github/* .vscode .gitignore Cargo.lock Cargo.toml README.md test.txt
 Copyright: Henri Egger <henri.egger@gmail.com>
 License: CC0-1.0
