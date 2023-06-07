@@ -1,0 +1,12 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: rgit
+Upstream-Contact: Henri Egger <henri.egger@gmail.com>
+Source: https://github.com/henri-egger/rgit
+
+Files: src/*
+Copyright: Henri Egger <henri.egger@gmail.com>
+License: MIT
+
+Files: .github/* .vscode .gitignore Cargo.lock Cargo.toml README.md test.txt 
+Copyright: Henri Egger <henri.egger@gmail.com>
+License: CC0-1.0
