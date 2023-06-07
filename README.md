@@ -1,7 +1,7 @@
 # rgit
 
 ![REUSE Compliance](https://github.com/henri-egger/rgit/actions/workflows/reuse.yml/badge.svg)
-![REUSE](https://api.reuse.software/info/github.com/henri-egger/rgit)
+[![REUSE status](https://api.reuse.software/badge/github.com/henri-egger/rgit)](https://api.reuse.software/info/github.com/henri-egger/rgit)
 
 This is a small implementation of git in the Rust programming language, i made it to learn Rust and better understand git at the same time.
 
